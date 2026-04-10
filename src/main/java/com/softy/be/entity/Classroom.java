@@ -25,4 +25,13 @@ public class Classroom extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
     private User teacher;
+
+    public static Classroom create(int grade, int classNumber, School school, User teacher) {
+        Classroom classroom = new Classroom();
+        classroom.grade = grade;
+        classroom.classNumber = classNumber;
+        classroom.school = school;
+        classroom.teacher = teacher;
+        return classroom;
+    }
 }

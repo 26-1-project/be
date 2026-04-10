@@ -16,9 +16,22 @@ spring:
   jackson:
     time-zone: Asia/Seoul
 
-  sql:
-    init:
-      mode: always
+oauth:
+  kakao:
+    client-id: ${KAKAO_CLIENT_ID}
+    client-secret: ${KAKAO_CLIENT_SECRET}
+    redirect-uri: ${KAKAO_REDIRECT_URI}
+    auth-uri: https://kauth.kakao.com/oauth/authorize
+    token-uri: https://kauth.kakao.com/oauth/token
+    user-info-uri: https://kapi.kakao.com/v2/user/me
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
+  refresh-expiration-seconds: ${JWT_REFRESH_EXPIRATION_SECONDS:1209600}
+
+admin:
+  provision-key: ${ADMIN_PROVISION_KEY}
 
 management:
   endpoints:
