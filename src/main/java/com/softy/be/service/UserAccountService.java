@@ -1,0 +1,62 @@
+package com.softy.be.service;
+
+import com.softy.be.entity.Classroom;
+import com.softy.be.entity.ParentStudent;
+import com.softy.be.entity.User;
+import com.softy.be.repository.ClassroomRepository;
+import com.softy.be.repository.ParentStudentRepository;
+import com.softy.be.repository.SocialAccountRepository;
+import com.softy.be.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+@RequiredArgsConstructor
+public class UserAccountService {
+
+    private final UserRepository userRepository;
+    private final SocialAccountRepository socialAccountRepository;
+    private final ClassroomRepository classroomRepository;
+    private final ParentStudentRepository parentStudentRepository;
+
+    @Transactional(readOnly = true)
+    public UserMeResult getMe(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"));
+
+        Integer grade = null;
+        Integer classNumber = null;
+
+        if ("TEACHER".equalsIgnoreCase(user.getRole())) {
+            Classroom classroom = classroomRepository.findFirstByTeacherIdOrderByIdDesc(userId).orElse(null);
+            if (classroom != null) {
+                grade = classroom.getGrade();
+                classNumber = classroom.getClassNumber();
+            }
+        } else if ("PARENT".equalsIgnoreCase(user.getRole())) {
+            ParentStudent mapping = parentStudentRepository.findFirstByParentIdOrderByIdDesc(userId).orElse(null);
+            if (mapping != null && mapping.getStudent() != null && mapping.getStudent().getClassroom() != null) {
+                grade = mapping.getStudent().getClassroom().getGrade();
+                classNumber = mapping.getStudent().getClassroom().getClassNumber();
+            }
+        }
+
+        return new UserMeResult(user.getRole(), user.getName(), grade, classNumber);
+    }
+
+    @Transactional
+    public void withdraw(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"));
+
+        if ("WITHDRAWN".equalsIgnoreCase(user.getRole())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 탈퇴한 계정입니다");
+        }
+
+        socialAccountRepository.deleteAllByUserId(userId);
+        user.withdraw();
+    }
+}
