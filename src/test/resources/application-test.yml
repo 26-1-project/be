@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:be_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      mode: never
+
+oauth:
+  kakao:
+    client-id: test-client-id
+    client-secret: test-client-secret
+    redirect-uri: http://localhost:8080/auth/kakao/callback
+
+jwt:
+  secret: test-jwt-secret-for-local-tests-only
+  expiration-seconds: 3600
+  refresh-expiration-seconds: 7200
+
+admin:
+  provision-key: test-admin-provision-key
