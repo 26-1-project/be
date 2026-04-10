@@ -33,7 +33,7 @@ public class AdminAuthController {
         ApiResponse<AdminLoginData> response = ApiResponse.of(
                 true,
                 200,
-                "\uAD00\uB9AC\uC790 \uB85C\uADF8\uC778\uC5D0 \uC131\uACF5\uD588\uC2B5\uB2C8\uB2E4.",
+                "관리자 로그인에 성공했습니다.",
                 new AdminLoginData(result.accessToken(), result.refreshToken())
         );
 
@@ -50,7 +50,7 @@ public class AdminAuthController {
         ApiResponse<AdminRegisterData> response = ApiResponse.of(
                 true,
                 201,
-                "\uAD00\uB9AC\uC790 \uACC4\uC815\uC774 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+                "관리자 계정이 생성되었습니다.",
                 new AdminRegisterData(result.userId(), result.role(), result.loginId())
         );
 

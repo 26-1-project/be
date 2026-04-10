@@ -32,7 +32,7 @@ public class UserController {
         ApiResponse<UserMeData> response = ApiResponse.of(
                 true,
                 200,
-                "\uD604\uC7AC \uC0AC\uC6A9\uC790 \uC815\uBCF4 \uC870\uD68C\uC5D0 \uC131\uACF5\uD588\uC2B5\uB2C8\uB2E4.",
+                "현재 사용자 정보 조회에 성공했습니다.",
                 new UserMeData(result.role(), result.name(), result.grade(), result.classNumber())
         );
 
@@ -49,7 +49,7 @@ public class UserController {
         ApiResponse<Object> response = ApiResponse.of(
                 true,
                 200,
-                "\uD68C\uC6D0 \uD0C8\uD1F4\uAC00 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+                "회원 탈퇴가 완료되었습니다.",
                 null
         );
 

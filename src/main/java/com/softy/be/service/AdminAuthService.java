@@ -31,14 +31,14 @@ public class AdminAuthService {
         validateLoginRequest(request);
 
         User user = userRepository.findByLoginId(request.loginId().trim())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778 \uC815\uBCF4\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보가 올바르지 않습니다"));
 
         if (!ADMIN_ROLE.equalsIgnoreCase(user.getRole())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "\uAD00\uB9AC\uC790 \uACC4\uC815\uB9CC \uB85C\uADF8\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자 계정만 로그인할 수 있습니다");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPw())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778 \uC815\uBCF4\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보가 올바르지 않습니다");
         }
 
         String accessToken = jwtService.createAccessToken(user.getId(), user.getName(), user.getRole());
@@ -54,7 +54,7 @@ public class AdminAuthService {
 
         String loginId = request.loginId().trim();
         if (userRepository.existsByLoginId(loginId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "\uC774\uBBF8 \uC0AC\uC6A9 \uC911\uC778 \uAD00\uB9AC\uC790 \uC544\uC774\uB514\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 관리자 아이디입니다");
         }
 
         String encodedPassword = passwordEncoder.encode(request.password());
@@ -66,37 +66,37 @@ public class AdminAuthService {
 
     private void validateLoginRequest(AdminLoginRequest request) {
         if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uC694\uCCAD \uBCF8\uBB38\uC774 \uD544\uC694\uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다");
         }
         if (isBlank(request.loginId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uB85C\uADF8\uC778 \uC544\uC774\uB514\uB294 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "로그인 아이디는 필수입니다");
         }
         if (isBlank(request.password())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uBE44\uBC00\uBC88\uD638\uB294 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "비밀번호는 필수입니다");
         }
     }
 
     private void validateRegisterRequest(AdminRegisterRequest request) {
         if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uC694\uCCAD \uBCF8\uBB38\uC774 \uD544\uC694\uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다");
         }
         if (isBlank(request.name())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uAD00\uB9AC\uC790 \uC774\uB984\uC740 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "관리자 이름은 필수입니다");
         }
         if (isBlank(request.loginId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uB85C\uADF8\uC778 \uC544\uC774\uB514\uB294 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "로그인 아이디는 필수입니다");
         }
         if (isBlank(request.password()) || request.password().length() < 8) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uBE44\uBC00\uBC88\uD638\uB294 8\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "비밀번호는 8자 이상이어야 합니다");
         }
     }
 
     private void validateProvisionKey(String requestProvisionKey) {
         if (isBlank(provisionKey)) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "\uAD00\uB9AC\uC790 \uC0DD\uC131 \uD0A4\uAC00 \uC124\uC815\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "관리자 생성 키가 설정되지 않았습니다");
         }
         if (isBlank(requestProvisionKey) || !provisionKey.equals(requestProvisionKey)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uAD00\uB9AC\uC790 \uC0DD\uC131 \uD0A4\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "관리자 생성 키가 일치하지 않습니다");
         }
     }
 

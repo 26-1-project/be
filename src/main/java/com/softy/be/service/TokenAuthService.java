@@ -15,18 +15,18 @@ public class TokenAuthService {
 
     public Long extractUserIdFromAuthorization(String authorization) {
         if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authorization Bearer \uD1A0\uD070\uC774 \uD544\uC694\uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authorization Bearer 토큰이 필요합니다");
         }
 
         String token = authorization.substring(BEARER_PREFIX.length()).trim();
         if (token.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "JWT \uD1A0\uD070\uC774 \uBE44\uC5B4\uC788\uC2B5\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "JWT 토큰이 비어있습니다");
         }
 
         try {
             return jwtService.extractUserId(token);
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 JWT \uD1A0\uD070\uC785\uB2C8\uB2E4", e);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효하지 않은 JWT 토큰입니다", e);
         }
     }
 }

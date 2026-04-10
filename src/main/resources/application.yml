@@ -33,6 +33,10 @@ jwt:
 admin:
   provision-key: ${ADMIN_PROVISION_KEY}
 
+swagger:
+  server-url: ${SWAGGER_SERVER_URL:}
+  local-server-url: ${SWAGGER_LOCAL_SERVER_URL:}
+
 management:
   endpoints:
     web:

@@ -1,7 +1,12 @@
-﻿name: Redeploy Latest Image
+﻿name: Redeploy Image (Blue-Green)
 
 on:
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: '배포할 이미지 태그(커밋 해시)'
+        required: true
+        type: string
 
 env:
   APP_NAME: softy-be
@@ -10,22 +15,21 @@ env:
 
 jobs:
   redeploy:
-    name: manual redeploy
+    name: manual blue-green redeploy
     runs-on: ubuntu-latest
     steps:
       - name: Build image name
         id: image
         run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/softy-be" >> "$GITHUB_OUTPUT"
 
-      - name: Redeploy via SSH
+      - name: Redeploy via SSH (Blue-Green)
         uses: appleboy/ssh-action@v1.0.3
         env:
           IMAGE: ${{ steps.image.outputs.image }}
-          TAG: latest
+          TAG: ${{ inputs.image_tag }}
           APP_NAME: ${{ env.APP_NAME }}
           DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
           LOG_PATH: ${{ env.LOG_PATH }}
-          APP_PORT: '8080'
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
@@ -33,10 +37,11 @@ jobs:
           username: ubuntu
           port: 22
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: IMAGE,TAG,APP_NAME,DEPLOY_PATH,LOG_PATH,APP_PORT,GHCR_USERNAME,GHCR_TOKEN
+          envs: IMAGE,TAG,APP_NAME,DEPLOY_PATH,LOG_PATH,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -e
 
+            NGINX_CONF=/etc/nginx/sites-enabled/default
             mkdir -p "$DEPLOY_PATH"
             mkdir -p "$LOG_PATH"
 
@@ -45,28 +50,69 @@ jobs:
               exit 1
             fi
 
+            ACTIVE_PORT=$(grep -Eo 'set \$upstream_app http://127\.0\.0\.1:(8081|8082);' "$NGINX_CONF" | grep -Eo '(8081|8082)' | head -n1 || true)
+            if [ "$ACTIVE_PORT" = "8081" ]; then
+              TARGET_PORT=8082
+              TARGET_SLOT=green
+              OLD_SLOT=blue
+            elif [ "$ACTIVE_PORT" = "8082" ]; then
+              TARGET_PORT=8081
+              TARGET_SLOT=blue
+              OLD_SLOT=green
+            else
+              echo "Active slot not found. Defaulting to blue(8081) active, green(8082) target."
+              TARGET_PORT=8082
+              TARGET_SLOT=green
+              OLD_SLOT=blue
+            fi
+
+            TARGET_CONTAINER="${APP_NAME}-${TARGET_SLOT}"
+            OLD_CONTAINER="${APP_NAME}-${OLD_SLOT}"
+
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
             docker pull "$IMAGE:$TAG"
 
-            docker rm -f "$APP_NAME" || true
+            docker rm -f "$TARGET_CONTAINER" || true
 
             docker run -d \
-              --name "$APP_NAME" \
+              --name "$TARGET_CONTAINER" \
               --restart unless-stopped \
               --env-file /home/ubuntu/softy/.env \
               -e LOG_PATH=/app/logs \
-              -p "$APP_PORT:8080" \
+              -p "$TARGET_PORT:8080" \
               -v "$LOG_PATH:/app/logs" \
               "$IMAGE:$TAG"
 
             for i in {1..20}; do
-              if curl -fsS "http://127.0.0.1:8080/health" >/dev/null; then
-                echo "Redeploy success"
-                exit 0
+              if curl -fsS "http://127.0.0.1:${TARGET_PORT}/health" >/dev/null; then
+                echo "New slot health check success"
+                break
+              fi
+              if [ "$i" -eq 20 ]; then
+                echo "New slot health check failed"
+                docker logs --tail 200 "$TARGET_CONTAINER" || true
+                exit 1
               fi
               sleep 3
             done
 
-            echo "Redeploy failed: health check did not pass"
-            docker logs --tail 200 "$APP_NAME" || true
+            sudo sed -i -E "s#set \\\$upstream_app http://127.0.0.1:(8081|8082);#set \\\$upstream_app http://127.0.0.1:${TARGET_PORT};#g" "$NGINX_CONF"
+            sudo nginx -t
+            sudo systemctl reload nginx
+
+            for i in {1..10}; do
+              if curl -fsS "https://softy2.duckdns.org/health" >/dev/null; then
+                echo "Post-switch health check success"
+                docker rm -f "$OLD_CONTAINER" || true
+                echo "Blue-green redeploy success: switched to ${TARGET_SLOT}(${TARGET_PORT})"
+                exit 0
+              fi
+              sleep 2
+            done
+
+            echo "Post-switch health check failed. Rolling back to ${ACTIVE_PORT}."
+            sudo sed -i -E "s#set \\\$upstream_app http://127.0.0.1:(8081|8082);#set \\\$upstream_app http://127.0.0.1:${ACTIVE_PORT};#g" "$NGINX_CONF"
+            sudo nginx -t
+            sudo systemctl reload nginx
+            docker rm -f "$TARGET_CONTAINER" || true
             exit 1

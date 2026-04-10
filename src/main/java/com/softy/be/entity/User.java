@@ -53,7 +53,7 @@ public class User extends BaseEntity {
     }
 
     public void withdraw() {
-        this.name = "\uD0C8\uD1F4\uD68C\uC6D0_" + this.id;
+        this.name = "탈퇴회원_" + this.id;
         this.loginId = null;
         this.pw = null;
         this.role = "WITHDRAWN";
