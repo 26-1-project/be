@@ -1,0 +1,72 @@
+﻿name: Redeploy Latest Image
+
+on:
+  workflow_dispatch:
+
+env:
+  APP_NAME: softy-be
+  DEPLOY_PATH: /home/ubuntu/softy/deploy/
+  LOG_PATH: /home/ubuntu/softy/logs/
+
+jobs:
+  redeploy:
+    name: manual redeploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build image name
+        id: image
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/softy-be" >> "$GITHUB_OUTPUT"
+
+      - name: Redeploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+          TAG: latest
+          APP_NAME: ${{ env.APP_NAME }}
+          DEPLOY_PATH: ${{ env.DEPLOY_PATH }}
+          LOG_PATH: ${{ env.LOG_PATH }}
+          APP_PORT: '8080'
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        with:
+          host: softy2.duckdns.org
+          username: ubuntu
+          port: 22
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: IMAGE,TAG,APP_NAME,DEPLOY_PATH,LOG_PATH,APP_PORT,GHCR_USERNAME,GHCR_TOKEN
+          script: |
+            set -e
+
+            mkdir -p "$DEPLOY_PATH"
+            mkdir -p "$LOG_PATH"
+
+            if [ ! -f /home/ubuntu/softy/.env ]; then
+              echo "Missing /home/ubuntu/softy/.env"
+              exit 1
+            fi
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+            docker pull "$IMAGE:$TAG"
+
+            docker rm -f "$APP_NAME" || true
+
+            docker run -d \
+              --name "$APP_NAME" \
+              --restart unless-stopped \
+              --env-file /home/ubuntu/softy/.env \
+              -e LOG_PATH=/app/logs \
+              -p "$APP_PORT:8080" \
+              -v "$LOG_PATH:/app/logs" \
+              "$IMAGE:$TAG"
+
+            for i in {1..20}; do
+              if curl -fsS "http://127.0.0.1:8080/health" >/dev/null; then
+                echo "Redeploy success"
+                exit 0
+              fi
+              sleep 3
+            done
+
+            echo "Redeploy failed: health check did not pass"
+            docker logs --tail 200 "$APP_NAME" || true
+            exit 1
