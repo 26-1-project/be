@@ -38,3 +38,14 @@ management:
     web:
       exposure:
         include: health
+
+logging:
+  file:
+    path: ${LOG_PATH:/app/logs}
+    name: ${LOG_PATH:/app/logs}/application.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: ${LOG_PATH:/app/logs}/application.%d{yyyy-MM-dd}.%i.log
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 3GB
