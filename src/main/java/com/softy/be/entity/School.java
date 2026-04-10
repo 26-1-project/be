@@ -16,4 +16,10 @@ public class School extends BaseEntity {
     private Long id;
 
     private String name;
+
+    public static School create(String name) {
+        School school = new School();
+        school.name = name;
+        return school;
+    }
 }
