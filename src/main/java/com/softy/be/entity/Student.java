@@ -25,4 +25,12 @@ public class Student extends BaseEntity {
     @JoinColumn(name = "classroom_id")
     private Classroom classroom;
 
+    public static Student create(String name, LocalDate birthday, String gender, Classroom classroom) {
+        Student student = new Student();
+        student.name = name;
+        student.birthday = birthday;
+        student.gender = gender;
+        student.classroom = classroom;
+        return student;
+    }
 }
