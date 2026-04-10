@@ -69,7 +69,7 @@ public class KakaoOAuthClient {
 
         JsonNode responseBody = response.getBody();
         if (responseBody == null || responseBody.path("access_token").isMissingNode()) {
-            throw new IllegalStateException("\uCE74\uCE74\uC624 \uC561\uC138\uC2A4 \uD1A0\uD070\uC744 \uAC00\uC838\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4");
+            throw new IllegalStateException("카카오 액세스 토큰을 가져오지 못했습니다");
         }
         return responseBody.path("access_token").asText();
     }
@@ -83,7 +83,7 @@ public class KakaoOAuthClient {
 
         JsonNode responseBody = response.getBody();
         if (responseBody == null || responseBody.path("id").isMissingNode()) {
-            throw new IllegalStateException("\uCE74\uCE74\uC624 \uC0AC\uC6A9\uC790 \uC815\uBCF4\uB97C \uAC00\uC838\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4");
+            throw new IllegalStateException("카카오 사용자 정보를 가져오지 못했습니다");
         }
 
         String providerUserId = responseBody.path("id").asText();

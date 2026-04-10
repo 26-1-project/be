@@ -65,7 +65,7 @@ public class JwtService {
                     .getSubject();
             return Long.parseLong(subject);
         } catch (JwtException | IllegalArgumentException e) {
-            throw new IllegalStateException("\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 JWT \uD1A0\uD070\uC785\uB2C8\uB2E4", e);
+            throw new IllegalStateException("유효하지 않은 JWT 토큰입니다", e);
         }
     }
 
@@ -74,7 +74,7 @@ public class JwtService {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return digest.digest(value.getBytes(StandardCharsets.UTF_8));
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 \uC54C\uACE0\uB9AC\uC998\uC744 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4", e);
+            throw new IllegalStateException("SHA-256 알고리즘을 사용할 수 없습니다", e);
         }
     }
 }

@@ -25,7 +25,7 @@ public class UserAccountService {
     @Transactional(readOnly = true)
     public UserMeResult getMe(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"));
 
         Integer grade = null;
         Integer classNumber = null;
@@ -50,10 +50,10 @@ public class UserAccountService {
     @Transactional
     public void withdraw(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"));
 
         if ("WITHDRAWN".equalsIgnoreCase(user.getRole())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "\uC774\uBBF8 \uD0C8\uD1F4\uD55C \uACC4\uC815\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 탈퇴한 계정입니다");
         }
 
         socialAccountRepository.deleteAllByUserId(userId);

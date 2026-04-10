@@ -71,10 +71,10 @@ public class AuthService {
         validateTeacherSignupRequest(request);
 
         User user = userRepository.findById(authenticatedUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"));
 
         if (!isRegistrationRequired(user.getRole())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "\uC774\uBBF8 \uD68C\uC6D0\uAC00\uC785\uC774 \uC644\uB8CC\uB41C \uC0AC\uC6A9\uC790\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 회원가입이 완료된 사용자입니다");
         }
 
         School school = schoolRepository.findByName(request.schoolName().trim())
@@ -94,14 +94,14 @@ public class AuthService {
     @Transactional
     public ClassCodeCreateResult createTeacherClassCode(Long authenticatedUserId) {
         User user = userRepository.findById(authenticatedUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"));
 
         if (!ROLE_TEACHER.equalsIgnoreCase(user.getRole())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "\uAD50\uC0AC \uACC4\uC815\uB9CC \uD074\uB798\uC2A4 \uCF54\uB4DC\uB97C \uC0DD\uC131\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "교사 계정만 클래스 코드를 생성할 수 있습니다");
         }
 
         Classroom classroom = classroomRepository.findFirstByTeacherIdOrderByIdDesc(authenticatedUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "\uC0DD\uC131\uD560 \uD559\uAE09 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "생성할 학급 정보를 찾을 수 없습니다"));
 
         String code = generateUniqueClassCode();
         classCodeRepository.save(ClassCode.create(code, classroom));
@@ -113,14 +113,14 @@ public class AuthService {
         validateParentSignupRequest(request);
 
         User user = userRepository.findById(authenticatedUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "\uC0AC\uC6A9\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다"));
 
         if (!isRegistrationRequired(user.getRole())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "\uC774\uBBF8 \uD68C\uC6D0\uAC00\uC785\uC774 \uC644\uB8CC\uB41C \uC0AC\uC6A9\uC790\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 회원가입이 완료된 사용자입니다");
         }
 
         ClassCode classCode = classCodeRepository.findFirstByCodeOrderByIdDesc(request.classCode().trim())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "\uC720\uD6A8\uD55C \uD559\uAE09 \uCF54\uB4DC\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "유효한 학급 코드를 찾을 수 없습니다"));
 
         Student student = studentRepository.save(
                 Student.create(
@@ -150,44 +150,44 @@ public class AuthService {
 
     private void validateTeacherSignupRequest(TeacherSignupRequest request) {
         if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uC694\uCCAD \uBCF8\uBB38\uC774 \uD544\uC694\uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다");
         }
         if (isBlank(request.teacherName())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uAD50\uC0AC \uC774\uB984\uC740 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "교사 이름은 필수입니다");
         }
         if (isBlank(request.schoolName())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uD559\uAD50 \uC774\uB984\uC740 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학교 이름은 필수입니다");
         }
         if (request.grade() == null || request.grade() < 1 || request.grade() > 6) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uD559\uB144\uC740 1~6 \uC0AC\uC774\uC5EC\uC57C \uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학년은 1~6 사이여야 합니다");
         }
         if (request.classNumber() == null || request.classNumber() < 1 || request.classNumber() > 30) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uBC18 \uBC88\uD638\uB294 1~30 \uC0AC\uC774\uC5EC\uC57C \uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "반 번호는 1~30 사이여야 합니다");
         }
     }
 
     private void validateParentSignupRequest(ParentSignupRequest request) {
         if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uC694\uCCAD \uBCF8\uBB38\uC774 \uD544\uC694\uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다");
         }
         if (isBlank(request.parentName())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uD559\uBD80\uBAA8 \uC774\uB984\uC740 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학부모 이름은 필수입니다");
         }
         if (isBlank(request.studentName())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uD559\uC0DD \uC774\uB984\uC740 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학생 이름은 필수입니다");
         }
         if (request.studentBirthday() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uD559\uC0DD \uC0DD\uC77C\uC740 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학생 생일은 필수입니다");
         }
         if (isBlank(request.studentGender())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uD559\uC0DD \uC131\uBCC4\uB294 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학생 성별는 필수입니다");
         }
         String gender = request.studentGender().trim().toUpperCase();
         if (!"M".equals(gender) && !"F".equals(gender)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uD559\uC0DD \uC131\uBCC4\uB294 M \uB610\uB294 F\uB85C \uC785\uB825\uD574\uC57C \uD569\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학생 성별는 M 또는 F로 입력해야 합니다");
         }
         if (isBlank(request.classCode())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uD559\uAE09 \uCF54\uB4DC\uB294 \uD544\uC218\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "학급 코드는 필수입니다");
         }
     }
 
@@ -198,7 +198,7 @@ public class AuthService {
                 return candidate;
             }
         }
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "\uACE0\uC720\uD55C \uD559\uAE09 \uCF54\uB4DC\uB97C \uC0DD\uC131\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4");
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "고유한 학급 코드를 생성하지 못했습니다");
     }
 
     private String randomCodeChunk(int size) {

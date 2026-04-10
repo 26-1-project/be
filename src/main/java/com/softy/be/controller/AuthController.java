@@ -60,17 +60,17 @@ public class AuthController {
             HttpSession session
     ) {
         if (error != null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uCE74\uCE74\uC624 \uB85C\uADF8\uC778\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4: " + error);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "카카오 로그인에 실패했습니다: " + error);
         }
         if (code == null || state == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uC778\uAC00 \uCF54\uB4DC \uB610\uB294 \uC0C1\uD0DC\uAC12\uC774 \uB204\uB77D\uB418\uC5C8\uC2B5\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "인가 코드 또는 상태값이 누락되었습니다");
         }
 
         Object storedState = session.getAttribute(OAUTH_STATE_KEY);
         session.removeAttribute(OAUTH_STATE_KEY);
 
         if (storedState == null || !state.equals(storedState.toString())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "\uC720\uD6A8\uD558\uC9C0 \uC54A\uC740 \uC0C1\uD0DC\uAC12\uC785\uB2C8\uB2E4");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 상태값입니다");
         }
 
         AuthResult result = authService.loginWithKakaoCode(code);
@@ -97,7 +97,7 @@ public class AuthController {
         ApiResponse<SignupUserData> response = ApiResponse.of(
                 true,
                 201,
-                "\uAD50\uC0AC \uD68C\uC6D0\uAC00\uC785\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+                "교사 회원가입이 완료되었습니다.",
                 new SignupUserData(result.userId(), result.role())
         );
 
@@ -115,7 +115,7 @@ public class AuthController {
         ApiResponse<SignupUserData> response = ApiResponse.of(
                 true,
                 201,
-                "\uD559\uBD80\uBAA8 \uD68C\uC6D0\uAC00\uC785\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+                "학부모 회원가입이 완료되었습니다.",
                 new SignupUserData(result.userId(), result.role())
         );
 
@@ -132,7 +132,7 @@ public class AuthController {
         ApiResponse<ClassCodeData> response = ApiResponse.of(
                 true,
                 201,
-                "\uD074\uB798\uC2A4\uCF54\uB4DC \uBC1C\uAE09\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+                "클래스코드 발급이 완료되었습니다.",
                 new ClassCodeData(result.classCode())
         );
 
