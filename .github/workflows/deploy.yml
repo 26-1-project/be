@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/deploy-ghcr-actions
   workflow_dispatch:
 
 env:

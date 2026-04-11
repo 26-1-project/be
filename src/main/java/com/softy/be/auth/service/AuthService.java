@@ -50,20 +50,23 @@ public class AuthService {
     @Transactional
     public AuthResult loginWithKakaoCode(String code) {
         String kakaoAccessToken = kakaoOAuthClient.exchangeCodeForAccessToken(code);
-        KakaoUserProfile profile = kakaoOAuthClient.getUserProfile(kakaoAccessToken);
-
-        SocialAccount socialAccount = socialAccountRepository
-                .findByProviderAndProviderUserId(KAKAO_PROVIDER, profile.providerUserId())
-                .orElseGet(() -> createKakaoAccount(profile));
-
-        User user = socialAccount.getUser();
-        if (!Objects.equals(user.getName(), profile.nickname())) {
-            user.updateName(profile.nickname());
-        }
+        User user = upsertKakaoUser(kakaoAccessToken);
 
         String accessToken = jwtService.createAccessToken(user.getId(), user.getName(), user.getRole());
         boolean registrationRequired = isRegistrationRequired(user.getRole());
         return new AuthResult(accessToken, user.getId(), user.getName(), user.getRole(), KAKAO_PROVIDER, registrationRequired);
+    }
+
+    @Transactional
+    public KakaoLoginResult loginWithKakaoAccessToken(String kakaoAccessToken) {
+        if (isBlank(kakaoAccessToken)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "kakaoAccessToken is required");
+        }
+
+        User user = upsertKakaoUser(kakaoAccessToken.trim());
+        String accessToken = jwtService.createAccessToken(user.getId(), user.getName(), user.getRole());
+        String refreshToken = jwtService.createRefreshToken(user.getId(), user.getRole());
+        return new KakaoLoginResult(accessToken, refreshToken);
     }
 
     @Transactional
@@ -142,6 +145,19 @@ public class AuthService {
 
         SocialAccount socialAccount = SocialAccount.create(user, KAKAO_PROVIDER, profile.providerUserId());
         return socialAccountRepository.save(socialAccount);
+    }
+
+    private User upsertKakaoUser(String kakaoAccessToken) {
+        KakaoUserProfile profile = kakaoOAuthClient.getUserProfile(kakaoAccessToken);
+        SocialAccount socialAccount = socialAccountRepository
+                .findByProviderAndProviderUserId(KAKAO_PROVIDER, profile.providerUserId())
+                .orElseGet(() -> createKakaoAccount(profile));
+
+        User user = socialAccount.getUser();
+        if (!Objects.equals(user.getName(), profile.nickname())) {
+            user.updateName(profile.nickname());
+        }
+        return user;
     }
 
     private boolean isRegistrationRequired(String role) {
