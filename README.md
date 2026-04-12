@@ -33,6 +33,7 @@ SOFTY 백엔드는 교사-학부모 소통 과정의 분쟁 리스크 완화를 
 | `KAKAO_CLIENT_ID` | 카카오 REST API 키 | 없음 |
 | `KAKAO_CLIENT_SECRET` | 카카오 Client Secret | 없음 |
 | `KAKAO_REDIRECT_URI` | 카카오 OAuth Redirect URI | 없음 |
+| `APP_FRONTEND_REDIRECT_URI` | 카카오 콜백 후 최종 리다이렉트할 프론트 URL | 빈 값 |
 | `JWT_SECRET` | JWT 서명 시크릿 | 없음 |
 | `JWT_EXPIRATION_SECONDS` | Access Token 만료(초) | `86400` |
 | `JWT_REFRESH_EXPIRATION_SECONDS` | Refresh Token 만료(초) | `1209600` |
