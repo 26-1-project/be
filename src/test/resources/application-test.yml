@@ -30,3 +30,6 @@ jwt:
 
 admin:
   provision-key: test-admin-provision-key
+
+app:
+  frontend-redirect-uri: http://localhost:5173
