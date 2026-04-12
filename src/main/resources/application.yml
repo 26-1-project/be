@@ -33,6 +33,9 @@ jwt:
 admin:
   provision-key: ${ADMIN_PROVISION_KEY}
 
+app:
+  frontend-redirect-uri: ${APP_FRONTEND_REDIRECT_URI:}
+
 swagger:
   server-url: ${SWAGGER_SERVER_URL:}
   local-server-url: ${SWAGGER_LOCAL_SERVER_URL:}

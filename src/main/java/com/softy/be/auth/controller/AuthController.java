@@ -18,6 +18,7 @@ import com.softy.be.auth.service.TeacherSignupResult;
 import com.softy.be.auth.service.TokenAuthService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.UUID;
@@ -43,6 +45,9 @@ public class AuthController {
     private final KakaoOAuthClient kakaoOAuthClient;
     private final AuthService authService;
     private final TokenAuthService tokenAuthService;
+
+    @Value("${app.frontend-redirect-uri:}")
+    private String frontendRedirectUri;
 
     @GetMapping("/kakao/login")
     public ResponseEntity<Void> redirectToKakao(HttpSession session) {
@@ -71,7 +76,7 @@ public class AuthController {
     }
 
     @GetMapping("/kakao/callback")
-    public ResponseEntity<AuthTokenResponse> kakaoCallback(
+    public ResponseEntity<?> kakaoCallback(
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String state,
             @RequestParam(required = false) String error,
@@ -93,7 +98,7 @@ public class AuthController {
 
         AuthResult result = authService.loginWithKakaoCode(code);
 
-        return ResponseEntity.ok(new AuthTokenResponse(
+        AuthTokenResponse response = new AuthTokenResponse(
                 result.accessToken(),
                 "Bearer",
                 result.userId(),
@@ -101,7 +106,15 @@ public class AuthController {
                 result.role(),
                 result.provider(),
                 result.registrationRequired()
-        ));
+        );
+
+        if (isFrontendRedirectConfigured()) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(buildFrontendSuccessUri(response))
+                    .build();
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/teachers/signup")
@@ -133,7 +146,7 @@ public class AuthController {
         ApiResponse<SignupUserData> response = ApiResponse.of(
                 true,
                 201,
-                "학부모 회원가입이 완료되었습니다.",
+                "Parent signup completed.",
                 new SignupUserData(result.userId(), result.role())
         );
 
@@ -155,5 +168,40 @@ public class AuthController {
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    private ResponseEntity<?> redirectWithError(String errorCode, String errorDescription) {
+        if (isFrontendRedirectConfigured()) {
+            URI redirectUri = UriComponentsBuilder.fromUriString(frontendRedirectUri)
+                    .queryParam("error", errorCode)
+                    .queryParam("errorDescription", errorDescription)
+                    .build()
+                    .encode()
+                    .toUri();
+
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .location(redirectUri)
+                    .build();
+        }
+
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, errorCode + ": " + errorDescription);
+    }
+
+    private URI buildFrontendSuccessUri(AuthTokenResponse response) {
+        return UriComponentsBuilder.fromUriString(frontendRedirectUri)
+                .queryParam("accessToken", response.accessToken())
+                .queryParam("tokenType", response.tokenType())
+                .queryParam("userId", response.userId())
+                .queryParam("name", response.name())
+                .queryParam("role", response.role())
+                .queryParam("provider", response.provider())
+                .queryParam("registrationRequired", response.registrationRequired())
+                .build()
+                .encode()
+                .toUri();
+    }
+
+    private boolean isFrontendRedirectConfigured() {
+        return frontendRedirectUri != null && !frontendRedirectUri.isBlank();
     }
 }
